@@ -73,7 +73,7 @@ check_existing() {
 }
 
 download_with_hf_cli() {
-    log "Starting model download with huggingface-cli..."
+    log "Starting model download with HF CLI..."
     log "Model: $MODEL_REPO"
     log "Destination: $MODEL_DIR"
     log "Expected size: ~600GB (64 safetensors files)"
@@ -87,18 +87,28 @@ download_with_hf_cli() {
     
     export HF_HUB_ENABLE_HF_TRANSFER=1
     
-    log "Starting huggingface-cli download..."
+    log "Starting download..."
     log "Progress will be shown below:"
     log "=========================================="
     
-    # Run without tee to preserve progress bar, log separately
-    huggingface-cli download "$MODEL_REPO" \
-        --local-dir "$MODEL_DIR" \
-        --resume-download \
-        --local-dir-use-symlinks False 2>&1 | while read line; do
-            echo "$line"
-            echo "$(date '+%Y-%m-%d %H:%M:%S') $line" >> "${PROJECT_ROOT}/logs/download.log"
-        done
+    if command -v hf >/dev/null 2>&1; then
+        log "Using hf CLI..."
+        hf model download "$MODEL_REPO" \
+            --local-dir "$MODEL_DIR" \
+            --resume-download 2>&1 | while read line; do
+                echo "$line"
+                echo "$(date '+%Y-%m-%d %H:%M:%S') $line" >> "${PROJECT_ROOT}/logs/download.log"
+            done
+    else
+        log "Using huggingface-cli..."
+        huggingface-cli download "$MODEL_REPO" \
+            --local-dir "$MODEL_DIR" \
+            --resume-download \
+            --local-dir-use-symlinks False 2>&1 | while read line; do
+                echo "$line"
+                echo "$(date '+%Y-%m-%d %H:%M:%S') $line" >> "${PROJECT_ROOT}/logs/download.log"
+            done
+    fi
     
     EXIT_CODE=${PIPESTATUS[0]}
     
@@ -201,9 +211,14 @@ main() {
         log "Resuming previous download..."
     fi
     
-    if command -v huggingface-cli >/dev/null 2>&1; then
+    if command -v hf >/dev/null 2>&1; then
+        log "Using new hf CLI..."
+        download_with_hf_cli
+    elif command -v huggingface-cli >/dev/null 2>&1; then
+        log "Using huggingface-cli..."
         download_with_hf_cli
     else
+        log "Using Python API (no CLI found)..."
         download_with_python
     fi
     
