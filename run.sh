@@ -61,7 +61,8 @@ cmd_download() {
     log "Size: ~600GB"
     log "This will take several hours depending on connection"
     log "========================================="
-    stdbuf -oL bash "${SCRIPT_DIR}/scripts/download.sh" 2>&1 | tee -a "${PROJECT_ROOT}/logs/download.log"
+    source "${PROJECT_ROOT}/activate.sh"
+    stdbuf -oL python3 "${PROJECT_ROOT}/download_model.py" 2>&1 | tee -a "${PROJECT_ROOT}/logs/download.log"
     log "========================================="
     success "Download step complete!"
 }
