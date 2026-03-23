@@ -128,7 +128,8 @@ cmd_clean() {
 cmd_all() {
     print_banner
     
-    log "This will run the complete pipeline. Estimated time: Days"
+    log "This will run the complete pipeline (skipping setup - already done)"
+    log "Estimated time: Days to weeks on CPU"
     read -p "Continue? (y/N): " -n 1 -r
     echo
     
@@ -136,7 +137,6 @@ cmd_all() {
         exit 0
     fi
     
-    cmd_setup
     cmd_download
     cmd_convert
     cmd_prepare
