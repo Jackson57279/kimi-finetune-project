@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$SCRIPT_DIR"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -50,17 +50,17 @@ show_help() {
 
 cmd_setup() {
     log "Running setup..."
-    bash "${SCRIPT_DIR}/setup.sh"
+    bash "${SCRIPT_DIR}/scripts/setup.sh"
 }
 
 cmd_download() {
     log "Downloading model..."
-    bash "${SCRIPT_DIR}/download.sh"
+    bash "${SCRIPT_DIR}/scripts/download.sh"
 }
 
 cmd_convert() {
     log "Converting model..."
-    bash "${SCRIPT_DIR}/convert.sh"
+    bash "${SCRIPT_DIR}/scripts/convert.sh"
 }
 
 cmd_prepare() {
