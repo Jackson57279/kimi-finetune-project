@@ -78,6 +78,27 @@ check_python() {
     log_success "Python version check passed"
 }
 
+install_build_deps() {
+    log "Checking build dependencies..."
+    
+    if ! command_exists cmake; then
+        log "Installing cmake..."
+        if command_exists apt-get; then
+            sudo apt-get update
+            sudo apt-get install -y cmake build-essential libopenblas-dev
+        elif command_exists yum; then
+            sudo yum install -y cmake gcc-c++ openblas-devel
+        elif command_exists pacman; then
+            sudo pacman -S cmake base-devel openblas
+        else
+            log_error "Could not install cmake automatically. Please install cmake manually."
+            exit 1
+        fi
+    fi
+    
+    log_success "Build dependencies installed: $(cmake --version | head -1)"
+}
+
 # Create uv virtual environment
 setup_venv() {
     log "Setting up uv virtual environment..."
@@ -309,6 +330,7 @@ main() {
     
     check_python
     install_uv
+    install_build_deps
     setup_venv
     install_deps
     setup_llamacpp
