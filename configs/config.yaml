@@ -3,7 +3,7 @@
 
 project:
   name: "kimi-k2.5-finetune"
-  base_dir: "/mnt/external2.5tb/kimi-finetune"
+  base_dir: "./kimi-finetune-data"
   storage_limit_gb: 2500
 
 model:
