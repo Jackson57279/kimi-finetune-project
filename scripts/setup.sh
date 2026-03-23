@@ -163,7 +163,7 @@ setup_llamacpp() {
         git pull origin master
     else
         log "Cloning llama.cpp..."
-        git clone --depth 1 https://github.com/ggerganov/llama.git "$LLAMA_DIR"
+        git clone --depth 1 https://github.com/ggerganov/llama.cpp.git "$LLAMA_DIR"
         cd "$LLAMA_DIR"
     fi
     
