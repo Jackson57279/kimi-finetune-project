@@ -236,6 +236,7 @@ create_dirs() {
         output/checkpoints \
         output/final \
         output/logs \
+        logs \
         cache/huggingface \
         cache/datasets \
         bin
@@ -294,29 +295,24 @@ check_storage() {
 create_activate_script() {
     log "Creating activation script..."
     
-    cat > "${PROJECT_ROOT}/activate.sh" << 'EOF'
+    cat > "${PROJECT_ROOT}/activate.sh" << EOF
 #!/bin/bash
-# Activate script for Kimi Fine-tuning Environment
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Activate uv environment
-source "${PROJECT_ROOT}/.venv/bin/activate"
+source "\${PROJECT_ROOT}/.venv/bin/activate"
 
-# Set environment variables
-export HF_HOME="${PROJECT_ROOT}/cache/huggingface"
-export HF_DATASETS_CACHE="${PROJECT_ROOT}/cache/datasets"
+export HF_HOME="\${PROJECT_ROOT}/cache/huggingface"
+export HF_DATASETS_CACHE="\${PROJECT_ROOT}/cache/datasets"
 export OMP_NUM_THREADS=16
 export OPENBLAS_NUM_THREADS=16
-export PATH="${PROJECT_ROOT}/bin:$PATH"
-
-# Add project root to Python path
-export PYTHONPATH="${PROJECT_ROOT}/src:$PYTHONPATH"
+export PATH="\${PROJECT_ROOT}/.venv/bin:\${PROJECT_ROOT}/bin:\${PATH}"
+export PYTHONPATH="\${PROJECT_ROOT}/src:\${PYTHONPATH:-}"
 
 echo "✓ Kimi Fine-tuning environment activated"
-echo "  Project: $PROJECT_ROOT"
-echo "  Python: $(which python)"
-echo "  HF Cache: $HF_HOME"
+echo "  Project: \$PROJECT_ROOT"
+echo "  Python: \$(which python)"
+echo "  HF Cache: \$HF_HOME"
 EOF
     
     chmod +x "${PROJECT_ROOT}/activate.sh"
