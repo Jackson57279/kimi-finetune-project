@@ -54,25 +54,62 @@ cmd_setup() {
 }
 
 cmd_download() {
-    log "Downloading model..."
-    bash "${SCRIPT_DIR}/scripts/download.sh"
+    log "========================================="
+    log "STEP 1/4: Downloading Kimi K2.5 Model"
+    log "========================================="
+    log "Model: moonshotai/Kimi-K2.5"
+    log "Size: ~600GB"
+    log "This will take several hours depending on connection"
+    log "========================================="
+    stdbuf -oL bash "${SCRIPT_DIR}/scripts/download.sh" 2>&1 | tee -a "${PROJECT_ROOT}/logs/download.log"
+    log "========================================="
+    success "Download step complete!"
 }
 
 cmd_convert() {
-    log "Converting model..."
-    bash "${SCRIPT_DIR}/scripts/convert.sh"
+    log "========================================="
+    log "STEP 2/4: Converting Model to GGUF"
+    log "========================================="
+    log "Creating:"
+    log "  - F16 (~1.2TB) for training"
+    log "  - Q4_K_M (~400GB) for inference"
+    log "  - Q5_K_M (~500GB) for inference"
+    log "========================================="
+    stdbuf -oL bash "${SCRIPT_DIR}/scripts/convert.sh" 2>&1 | tee -a "${PROJECT_ROOT}/logs/convert.log"
+    log "========================================="
+    success "Conversion step complete!"
 }
 
 cmd_prepare() {
-    log "Preparing datasets..."
+    log "========================================="
+    log "STEP 3/4: Preparing Massive Datasets"
+    log "========================================="
+    log "Downloading ~900k samples from:"
+    log "  - UltraChat 200k"
+    log "  - OpenOrca"
+    log "  - WizardLM"
+    log "  - OpenHermes 2.5"
+    log "  - Dolphin"
+    log "========================================="
     source "${PROJECT_ROOT}/activate.sh"
-    python3 "${PROJECT_ROOT}/src/prepare_data.py" --config "${PROJECT_ROOT}/configs/config.yaml"
+    stdbuf -oL python3 "${PROJECT_ROOT}/src/prepare_data.py" --config "${PROJECT_ROOT}/configs/config.yaml" 2>&1 | tee -a "${PROJECT_ROOT}/logs/prepare.log"
+    log "========================================="
+    success "Dataset preparation complete!"
 }
 
 cmd_train() {
-    log "Starting training..."
+    log "========================================="
+    log "STEP 4/4: Training LoRA Adapters"
+    log "========================================="
+    log "This will take DAYS on CPU"
+    log "LoRA Rank: 32"
+    log "Training samples: ~900k"
+    log "Press Ctrl+C to interrupt (checkpoint will be saved)"
+    log "========================================="
     source "${PROJECT_ROOT}/activate.sh"
-    python3 "${PROJECT_ROOT}/src/train.py" --config "${PROJECT_ROOT}/configs/config.yaml"
+    stdbuf -oL python3 "${PROJECT_ROOT}/src/train.py" --config "${PROJECT_ROOT}/configs/config.yaml" 2>&1 | tee -a "${PROJECT_ROOT}/logs/train.log"
+    log "========================================="
+    success "Training complete!"
 }
 
 cmd_inference() {
@@ -137,10 +174,13 @@ cmd_all() {
         exit 0
     fi
     
-    cmd_download
-    cmd_convert
-    cmd_prepare
-    cmd_train
+    log "Starting complete pipeline..."
+    log ""
+    
+    cmd_download || { error "Download failed!"; exit 1; }
+    cmd_convert || { error "Conversion failed!"; exit 1; }
+    cmd_prepare || { error "Dataset preparation failed!"; exit 1; }
+    cmd_train || { error "Training failed!"; exit 1; }
     
     success "Pipeline complete!"
 }

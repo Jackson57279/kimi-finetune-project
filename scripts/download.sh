@@ -76,6 +76,9 @@ download_with_hf_cli() {
     log "Starting model download with huggingface-cli..."
     log "Model: $MODEL_REPO"
     log "Destination: $MODEL_DIR"
+    log "Expected size: ~600GB (64 safetensors files)"
+    log "This will take several hours..."
+    log ""
     
     mkdir -p "$MODEL_DIR"
     touch "$LOCK_FILE"
@@ -84,14 +87,25 @@ download_with_hf_cli() {
     
     export HF_HUB_ENABLE_HF_TRANSFER=1
     
+    log "Starting huggingface-cli download..."
+    log "Progress will be shown below:"
+    log "=========================================="
+    
+    # Run without tee to preserve progress bar, log separately
     huggingface-cli download "$MODEL_REPO" \
         --local-dir "$MODEL_DIR" \
         --resume-download \
-        --local-dir-use-symlinks False \
-        2>&1 | tee "${PROJECT_ROOT}/logs/download.log"
+        --local-dir-use-symlinks False 2>&1 | while read line; do
+            echo "$line"
+            echo "$(date '+%Y-%m-%d %H:%M:%S') $line" >> "${PROJECT_ROOT}/logs/download.log"
+        done
     
-    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-        log_error "Download failed"
+    EXIT_CODE=${PIPESTATUS[0]}
+    
+    log "=========================================="
+    
+    if [[ $EXIT_CODE -ne 0 ]]; then
+        log_error "Download failed with exit code $EXIT_CODE"
         exit 1
     fi
     
