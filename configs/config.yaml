@@ -1,0 +1,150 @@
+# Kimi K2.5 Fine-Tuning Configuration
+# Optimized for CPU training with 2.5TB storage limit
+
+project:
+  name: "kimi-k2.5-finetune"
+  base_dir: "/mnt/external2.5tb/kimi-finetune"
+  storage_limit_gb: 2500
+
+model:
+  name: "moonshotai/Kimi-K2.5"
+  repo_id: "moonshotai/Kimi-K2.5"
+  
+  # Storage allocations (total must be < 2500GB)
+  storage:
+    original_int4_gb: 600      # Original model
+    f16_conversion_gb: 1200    # F16 for training
+    q4_quantized_gb: 400       # Q4_K_M for inference
+    q5_quantized_gb: 500       # Q5_K_M for inference
+    checkpoints_gb: 300        # Training checkpoints
+    datasets_gb: 100           # Prepared datasets
+    
+  # Download settings
+  download:
+    resume: true
+    max_workers: 4
+    chunk_size: 10485760  # 10MB chunks
+
+# Training Configuration
+training:
+  method: "lora"
+  
+  lora:
+    rank: 32
+    alpha: 64
+    dropout: 0.05
+    target_modules:
+      - q_proj
+      - k_proj
+      - v_proj
+      - o_proj
+      - gate_proj
+      - up_proj
+      - down_proj
+  
+  hyperparameters:
+    learning_rate: 1.0e-4
+    batch_size: 1
+    gradient_accumulation_steps: 16
+    num_epochs: 3
+    warmup_steps: 100
+    max_seq_length: 2048
+    save_steps: 500
+    eval_steps: 500
+    logging_steps: 10
+    
+  optimization:
+    gradient_checkpointing: true
+    fp16: false
+    bf16: true
+    optim: "adamw_torch"
+    weight_decay: 0.01
+    max_grad_norm: 0.3
+    group_by_length: true
+
+# Dataset Configuration
+datasets:
+  # Primary massive datasets for general capability
+  massive_datasets:
+    - name: "HuggingFaceH4/ultrachat_200k"
+      subset: "train"
+      sample_size: 100000
+      weight: 0.3
+      format: "chatml"
+      
+    - name: "Open-Orca/OpenOrca"
+      subset: null
+      sample_size: 500000
+      weight: 0.25
+      format: "alpaca"
+      
+    - name: "WizardLM/WizardLM_evol_instruct_V2_196k"
+      subset: null
+      sample_size: 100000
+      weight: 0.2
+      format: "chatml"
+      
+    - name: "teknium/OpenHermes-2.5"
+      subset: null
+      sample_size: 100000
+      weight: 0.15
+      format: "chatml"
+      
+    - name: "ehartford/dolphin"
+      subset: "flan5m-alpaca"
+      sample_size: 100000
+      weight: 0.1
+      format: "alpaca"
+  
+  # Specialized datasets (add based on your use case)
+  specialized_datasets:
+    # Uncomment and configure based on your needs:
+    # - name: "your-domain-dataset"
+    #   sample_size: 50000
+    #   weight: 0.3
+    #   format: "alpaca"
+  
+  # Dataset mixing
+  mixing:
+    shuffle: true
+    seed: 42
+    deduplicate: true
+    min_length: 50
+    max_length: 2048
+
+# llama.cpp Configuration
+llamacpp:
+  repo: "https://github.com/ggerganov/llama.cpp"
+  branch: "master"
+  
+  build_options:
+    openblas: true
+    native: true
+    lto: true
+    cuda: false
+    
+  quantize_types:
+    - "Q4_K_M"
+    - "Q5_K_M"
+    - "Q8_0"
+
+# System Configuration
+system:
+  python_version: "3.11"
+  uv_version: "0.5.x"
+  
+  # CPU optimization
+  threads: 16
+  omp_threads: 16
+  
+  # Memory settings
+  memory_map: true
+  cache_dir: "./cache"
+
+# Logging
+logging:
+  level: "INFO"
+  log_dir: "./logs"
+  tensorboard: true
+  wandb: false
+  wandb_project: null
